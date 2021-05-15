@@ -2,14 +2,14 @@
 #define MAX_SZ	1005
 #define EMPTY	'.'
 #define WALL	'#'
-#define RABBIT	'R'		// [!] ¹İµå½Ã ÇÏ³ª¸¸ ÁÖ¾îÁø´Ù.
+#define RABBIT	'R'		// [!] ë°˜ë“œì‹œ í•˜ë‚˜ë§Œ ì£¼ì–´ì§„ë‹¤.
 #define CARROT	'C'
-#define DOOR	'O'		// [!] ¾ø°Å³ª ¿©·¯ °³ÀÏ ¼ö ÀÖ´Ù. 
+#define DOOR	'O'		// [!] ì—†ê±°ë‚˜ ì—¬ëŸ¬ ê°œì¼ ìˆ˜ ìˆë‹¤. 
 
-/***  17130 :: Åä³¢°¡ Á¤º¸¼¶¿¡ ¿Ã¶ó¿Â ÀÌÀ¯
-1. ´Á´ë¸¦ ÇÇÇÏµÇ -> Åä³¢ÀÇ ÁøÇà¹æÇâÀº ¹«Á¶°Ç Á¤ÇØÁ® ÀÖÀ¸¹Ç·Î(¿À¸¥ÂÊ) ÀÌ Á¶°ÇÀº °í·Áx
-2. °¡Àå ¸¹Àº ´ç±ÙÀ» ÁÖ¿ö¾ß ÇÑ´Ù.
-¸ğµç °æ¿ìÀÇ ¼ö¸¦ °í·ÁÇØ¾ß ÇÏ¹Ç·Î Memoization À» È°¿ëÇÏ¿© °°Àº °æ·Î¸¦ ´Ù½Ã Å½»öÇÏÁö ¾Êµµ·Ï ÇÑ´Ù.
+/***  17130 :: í† ë¼ê°€ ì •ë³´ì„¬ì— ì˜¬ë¼ì˜¨ ì´ìœ 
+1. ëŠ‘ëŒ€ë¥¼ í”¼í•˜ë˜ -> í† ë¼ì˜ ì§„í–‰ë°©í–¥ì€ ë¬´ì¡°ê±´ ì •í•´ì ¸ ìˆìœ¼ë¯€ë¡œ(ì˜¤ë¥¸ìª½) ì´ ì¡°ê±´ì€ ê³ ë ¤x
+2. ê°€ì¥ ë§ì€ ë‹¹ê·¼ì„ ì£¼ì›Œì•¼ í•œë‹¤.
+ëª¨ë“  ê²½ìš°ì˜ ìˆ˜ë¥¼ ê³ ë ¤í•´ì•¼ í•˜ë¯€ë¡œ Memoization ì„ í™œìš©í•˜ì—¬ ê°™ì€ ê²½ë¡œë¥¼ ë‹¤ì‹œ íƒìƒ‰í•˜ì§€ ì•Šë„ë¡ í•œë‹¤.
 -> Dynamic Programming
 ***/
 
@@ -17,12 +17,11 @@ struct Point {
 	int y, x;
 };
 
-int N, M, DOOR_NUM = 0;
+int N, M;
 char map[MAX_SZ][MAX_SZ] = { WALL, };
 Point START;
-Point wayOut[MAX_SZ * MAX_SZ];
 
-int dp[MAX_SZ][MAX_SZ];		// dp[i][j] = (i, j) ÁÂÇ¥¿¡ Åä³¢°¡ À§Ä¡ÇÒ ¶§ È¹µæÇÑ ÃÖ´ë ´ç±Ù ¼ö
+int dp[MAX_SZ][MAX_SZ];		// dp[i][j] = (i, j) ì¢Œí‘œì— í† ë¼ê°€ ìœ„ì¹˜í•  ë•Œ íšë“í•œ ìµœëŒ€ ë‹¹ê·¼ ìˆ˜
 
 int max3(int a, int b, int c) {
 	if (a < b) {
@@ -31,18 +30,6 @@ int max3(int a, int b, int c) {
 	else {
 		return a < c ? c : a;
 	}
-}
-
-int solve(int i, int j) {
-	if (map[i][j] == RABBIT) return 0;
-	if (j <= START.x) return -1;				// Åä³¢´Â ¿ŞÂÊÀ¸·Î ÀÌµ¿ÇÒ ¼ö ¾ø´Ù. 
-	if (map[i][j] == WALL) return -1;
-	if (dp[i][j] != -1) return dp[i][j];
-
-	dp[i][j] = max3(solve(i - 1, j - 1), solve(i, j - 1), solve(i + 1, j - 1));
-	if (map[i][j] == CARROT) dp[i][j] += 1;
-
-	return dp[i][j];
 }
 
 int main() {
@@ -65,28 +52,27 @@ int main() {
 			if (map[i][j] == RABBIT) {
 				START.y = i; START.x = j;
 			}
+		}
+	}
+
+	dp[START.y][START.x] = 0;
+	int maxCarrot = -1;
+
+	for (int j = START.x + 1; j <= M; ++j) {
+		for (int i = 1; i <= N; ++i) {
+			if (map[i][j] == WALL) continue;
+
+			dp[i][j] = max3(dp[i - 1][j - 1], dp[i][j - 1], dp[i + 1][j - 1]);
+			if (dp[i][j] == -1) continue;
+			if (map[i][j] == CARROT) dp[i][j] += 1;
 			if (map[i][j] == DOOR) {
-				wayOut[DOOR_NUM].y = i;
-				wayOut[DOOR_NUM].x = j;
-				DOOR_NUM++;
+				// check the carrot number for each door
+				if (maxCarrot < dp[i][j]) maxCarrot = dp[i][j];
 			}
 		}
 	}
 
-	if (DOOR_NUM == 0) {
-		// no way out
-		printf("%d", -1);
-	}
-	else {
-		// check the carrot number for each door
-		int maxCarrot = -1;
-		for (int i = 0; i < DOOR_NUM; ++i) {
-			int y = wayOut[i].y;
-			int x = wayOut[i].x;
-			if (maxCarrot < solve(y, x)) maxCarrot = dp[y][x];
-		}
-		printf("%d", maxCarrot);
-	}
+	printf("%d", maxCarrot);
 
 	return 0;
 }
