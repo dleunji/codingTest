@@ -20,7 +20,7 @@ int bellman_ford(void) {
 			if (dist[st] != 1e9) {
 				if (dist[ed] > dist[st] + time) {
 					if (i == N) {
-						return -1;
+						return -1;//음의 순환 존재
 					}
 					else {
 						dist[ed] = dist[st] + time;
